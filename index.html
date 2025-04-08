@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en" class="">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>FitGPT Chat</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+    }
+  </script>
+</head>
+<body class="h-screen bg-gray-100 dark:bg-g0 text-black dark:text-white font-sans">
+  <div class="flex h-full">
+    <!-- History Sidebar -->
+    <div id="history-sidebar" class="w-64 bg-gray-50 dark:bg-gray-900 border-r dark:border-gray-700 p-4 overflow-y-auto hidden md:block">
+      <div class="flex justify-between items-center mb-4">
+        <h2 class="text-lg font-semibold">Chat History</h2>
+        <button 
+          id="clear-history-btn" 
+          class="text-red-500 hover:text-red-700 text-sm underline"
+        >
+          Clear History
+        </button>
+      </div>
+      <div id="history-list" class="space-y-2"></div>
+    </div>
+
+    <main class="flex flex-col flex-1 transition-all duration-300 h-screen">
+      <!-- Chat Body -->
+      <div id="chat-body" class="flex-1 p-6 overflow-y-auto space-y-4 mb-28">
+        <!-- Messages will appear here -->
+      </div>
+    
+      <!-- Chat Input Area -->
+      <div class="fixed bottom-0 left-0 w-full bg-white dark:bg-gray-800 border-t dark:border-gray-700 px-4 py-3 z-50 md:ml-64">
+        <div class="max-w-3xl mx-auto flex items-center gap-3">
+          <input 
+            type="text" 
+            id="input-box" 
+            placeholder="Send a message..." 
+            class="flex-1 px-4 py-2 rounded-full border border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white placeholder-gray-500 dark:placeholder-gray-400" 
+          />
+          <button 
+            onclick="startVoice()" 
+            class="bg-green-400 hover:bg-green-500 text-white p-2 rounded-full transition duration-200 flex items-center justify-center"
+            title="Voice Input"
+          >
+            <!-- Updated Mic Icon -->
+            <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M12 14a3 3 0 0 0 3-3V5a3 3 0 1 0-6 0v6a3 3 0 0 0 3 3zm5-3a5 5 0 0 1-10 0H5a7 7 0 0 0 14 0h-2zm-5 9a1 1 0 0 0 1-1v-2h-2v2a1 1 0 0 0 1 1z"/>
+            </svg>
+          </button>
+          <button 
+            id="send-btn" 
+            class="bg-blue-500 hover:bg-blue-600 text-white px-5 py-2 rounded-full transition duration-200"
+          >
+            Send
+          </button>
+        </div>
+      </div>
+    </main>
+  </div>
+  <!-- Chat Logic -->
+  <script>
+    const API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent';
+    const API_KEY = 'AIzaSyCiyWee7hmJZqULuan08YbojY4ZfuQfWgI'; // Replace with your actual API key
+  
+    const inputBox = document.getElementById('input-box');
+    const sendBtn = document.getElementById('send-btn');
+    const chatBody = document.getElementById('chat-body');
+    const historyList = document.getElementById('history-list');
+    const clearHistoryBtn = document.getElementById('clear-history-btn');
+    
+    // Chat history array
+    let chatHistory = JSON.parse(localStorage.getItem('chatHistory')) || [];
+    
+    // Format message (bold and line breaks)
+    function formatMessage(message) {
+      return message
+        .replace(/\*\*\s*(.*?)\s*\*\*/g, '<b>$1</b>')
+        .replace(/(^|\s)\*\s*(\S.*?)(?=\s|$)/g, '$1<b>$2</b>')
+        .replace(/\n/g, '<br>');
+    }
+  
+    // Add message to chat area
+    function addMessage(text, sender = 'user') {
+      const messageDiv = document.createElement('div');
+      messageDiv.className = `p-3 max-w-lg rounded-lg shadow ${
+        sender === 'user' 
+          ? 'bg-blue-200 dark:bg-blue-500 self-end'
+          : 'bg-teal-100 dark:bg-teal-600 self-start'
+      } whitespace-pre-wrap`;
+      messageDiv.innerHTML = formatMessage(text);
+  
+      const wrapper = document.createElement('div');
+      wrapper.className = 'flex flex-col';
+      wrapper.appendChild(messageDiv);
+  
+      chatBody.appendChild(wrapper);
+      chatBody.scrollTop = chatBody.scrollHeight;
+
+      // Add to history
+      const historyEntry = { text, sender, timestamp: new Date().toISOString() };
+      chatHistory.push(historyEntry);
+      localStorage.setItem('chatHistory', JSON.stringify(chatHistory));
+      updateHistoryDisplay(historyEntry);
+    }
+  
+    // Update history sidebar
+    function updateHistoryDisplay({ text, sender, timestamp }) {
+      const historyItem = document.createElement('div');
+      historyItem.className = 'p-2 bg-white dark:bg-gray-800 rounded cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700';
+      const time = new Date(timestamp).toLocaleTimeString();
+      historyItem.innerHTML = `
+        <div class="text-sm ${sender === 'user' ? 'text-blue-600' : 'text-teal-600'}">${sender === 'user' ? 'You' : 'Bot'}</div>
+        <div class="text-xs truncate">${text}</div>
+        <div class="text-xs text-gray-500">${time}</div>
+      `;
+      historyList.appendChild(historyItem);
+    }
+  
+    // Clear history
+    function clearHistory() {
+      chatHistory = [];
+      localStorage.removeItem('chatHistory');
+      historyList.innerHTML = '';
+      chatBody.innerHTML = '';
+    }
+  
+    // Show "Thinking..." loader
+    let loadingDiv;
+    function showLoading() {
+      loadingDiv = document.createElement('div');
+      loadingDiv.className = 'p-3 max-w-lg rounded-lg shadow bg-gray-200 dark:bg-gray-600 self-start italic';
+      loadingDiv.innerText = 'Thinking...';
+  
+      const wrapper = document.createElement('div');
+      wrapper.className = 'flex flex-col loading-indicator';
+      wrapper.appendChild(loadingDiv);
+      chatBody.appendChild(wrapper);
+      chatBody.scrollTop = chatBody.scrollHeight;
+    }
+  
+    function removeLoading() {
+      const loading = document.querySelector('.loading-indicator');
+      if (loading) loading.remove();
+    }
+  
+    // Send message to Gemini
+    async function sendMessageToGemini(message) {
+      showLoading();
+  
+      try {
+        const response = await fetch(`${API_URL}?key=${API_KEY}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: message }] }]
+          })
+        });
+  
+        const data = await response.json();
+        removeLoading();
+  
+        const reply = data?.candidates?.[0]?.content?.parts?.[0]?.text || 'Sorry, no response.';
+        addMessage(reply, 'bot');
+      } catch (error) {
+        removeLoading();
+        addMessage('Error: Unable to reach Gemini API.', 'bot');
+        console.error(error);
+      }
+    }
+  
+    // Unified send message logic
+    function sendMessage() {
+      const userInput = inputBox.value.trim();
+      if (!userInput) return;
+  
+      addMessage(userInput, 'user');
+      inputBox.value = '';
+      sendMessageToGemini(userInput);
+    }
+  
+    // Load chat history on page load
+    function loadChatHistory() {
+      chatHistory.forEach(entry => {
+        addMessage(entry.text, entry.sender);
+        updateHistoryDisplay(entry);
+      });
+    }
+  
+    // Send on button click
+    sendBtn.addEventListener('click', sendMessage);
+  
+    // Send on Enter key
+    inputBox.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') sendMessage();
+    });
+  
+    // Start voice recognition and auto-send
+    function startVoice() {
+      const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+      recognition.lang = 'en-US';
+      recognition.interimResults = false;
+      recognition.maxAlternatives = 1;
+  
+      recognition.start();
+  
+      recognition.onstart = () => {
+        inputBox.placeholder = 'Listening...';
+      };
+  
+      recognition.onresult = (event) => {
+        const transcript = event.results[0][0].transcript;
+        inputBox.value = transcript;
+        inputBox.placeholder = 'Send a message...';
+        sendMessage(); // Auto-send after voice input
+      };
+  
+      recognition.onerror = () => {
+        inputBox.placeholder = 'Voice input failed';
+      };
+  
+      recognition.onend = () => {
+        inputBox.placeholder = 'Send a message...';
+      };
+    }
+  
+    // Load history when page loads
+    window.addEventListener('load', loadChatHistory);
+    
+    // Clear history button event
+    clearHistoryBtn.addEventListener('click', () => {
+      if (confirm('Are you sure you want to clear all chat history?')) {
+        clearHistory();
+      }
+    });
+  </script>
+</body>
+</html>
