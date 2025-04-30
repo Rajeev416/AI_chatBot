@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<html lang="en" class="">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Virtual Museum Guide - An AI assistant specialized in museums, artwork, art history, and cultural heritage information." />
+    <title>Virtual Museum Guide - Your Museum Knowledge Assistant</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Open+Sans:wght@400;600&display=swap"
+      rel="stylesheet"
+    />
+    <script>
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            fontFamily: {
+              playfair: ['"Playfair Display"', "serif"],
+              sans: ['"Open Sans"', "sans-serif"],
+            },
+            colors: {
+              museum: {
+                primary: "#1a3c34",
+                secondary: "#a67c52",
+                accent: "#d4a373",
+                light: "#f5ebe0",
+              },
+            },
+          },
+        },
+      };
+    </script>
+    <style>
+      .museum-pattern {
+        background-color: #ffffff;
+        background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23f0f0f0' fill-opacity='0.4'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+      }
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+          transform: translateY(10px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+      .fade-in {
+        animation: fadeIn 0.5s ease-out forwards;
+      }
+      .scroll-smooth {
+        scroll-behavior: smooth;
+      }
+    </style>
+  </head>
+  <body
+    class="h-screen bg-museum-light dark:bg-gray-900 text-black dark:text-white font-sans"
+  >
+    <!-- Museum Header -->
+    <header class="bg-museum-primary text-white py-4 px-6 shadow-lg">
+      <div class="max-w-7xl mx-auto flex justify-between items-center">
+        <div>
+          <h1 class="font-playfair text-3xl font-bold">Virtual Museum Guide</h1>
+          <p class="text-gray-300 mt-1">
+            Your personal assistant for exploring art and history
+          </p>
+        </div>
+        <div class="hidden md:block">
+          <img
+            src="https://i.imgur.com/xSGUkwd.png"
+            alt="Museum Logo"
+            class="h-16"
+          />
+        </div>
+      </div>
+    </header>
+
+    <div class="flex h-[calc(100vh-88px)]">
+      <!-- History Sidebar -->
+      <div
+        id="history-sidebar"
+        class="w-64 bg-white dark:bg-gray-800 border-r dark:border-gray-700 p-4 overflow-y-auto hidden md:block"
+      >
+        <div class="flex justify-between items-center mb-4">
+          <h2 class="text-lg font-playfair font-semibold">Chat History</h2>
+          <button
+            id="clear-history-btn"
+            class="text-red-500 hover:text-red-700 text-sm underline"
+          >
+            Clear History
+          </button>
+        </div>
+        <div id="history-list" class="space-y-2"></div>
+      </div>
+
+      <main class="flex flex-col flex-1 transition-all duration-300">
+        <!-- Suggested Questions -->
+        <div
+          class="bg-white dark:bg-gray-800 p-4 border-b dark:border-gray-700"
+        >
+          <h3 class="font-playfair font-semibold mb-2">Explore Our Museum:</h3>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-2 mb-2">
+            <button
+              onclick="askQuestion(this.textContent)"
+              class="text-sm bg-museum-primary text-white px-3 py-2 rounded-lg hover:bg-opacity-90 transition-colors flex items-center"
+            >
+              <svg
+                class="w-4 h-4 mr-2"
+                fill="currentColor"
+                viewBox="0 0 20 20"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path d="M9 9a2 2 0 114 0 2 2 0 01-4 0z"></path>
+                <path
+                  fill-rule="evenodd"
+                  d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-13a4 4 0 00-3.446 6.032l-2.261 2.26a1 1 0 101.414 1.415l2.261-2.261A4 4 0 1011 5z"
+                  clip-rule="evenodd"
+                ></path>
+              </svg>
+              What exhibitions are currently on display?
+            </button>
+            <button
+              onclick="askQuestion(this.textContent)"
+              class="text-sm bg-museum-primary text-white px-3 py-2 rounded-lg hover:bg-opacity-90 transition-colors flex items-center"
+            >
+              <svg
+                class="w-4 h-4 mr-2"
+                fill="currentColor"
+                viewBox="0 0 20 20"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  fill-rule="evenodd"
+                  d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z"
+                  clip-rule="evenodd"
+                ></path>
+              </svg>
+              Tell me about the museum's most famous artwork
+            </button>
+            <button
+              onclick="askQuestion(this.textContent)"
+              class="text-sm bg-museum-primary text-white px-3 py-2 rounded-lg hover:bg-opacity-90 transition-colors flex items-center"
+            >
+              <svg
+                class="w-4 h-4 mr-2"
+                fill="currentColor"
+                viewBox="0 0 20 20"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  fill-rule="evenodd"
+                  d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z"
+                  clip-rule="evenodd"
+                ></path>
+              </svg>
+              What's the history of this museum?
+            </button>
+            <button
+              onclick="askQuestion(this.textContent)"
+              class="text-sm bg-museum-primary text-white px-3 py-2 rounded-lg hover:bg-opacity-90 transition-colors flex items-center"
+            >
+              <svg
+                class="w-4 h-4 mr-2"
+                fill="currentColor"
+                viewBox="0 0 20 20"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  fill-rule="evenodd"
+                  d="M12 1.586l-4 4v12.828l4-4V1.586zM3.707 3.293A1 1 0 004 4v10c0 .276.111.52.293.707L8 18.414V5.586L3.707 3.293zM17.707 5.293L14 1.586v12.828l2.293 2.293A1 1 0 0017 16V6a1 1 0 00-.293-.707z"
+                  clip-rule="evenodd"
+                ></path>
+              </svg>
+              Guide me through the Renaissance collection
+            </button>
+          </div>
+          <div class="flex flex-wrap gap-2 mt-2">
+            <button
+              onclick="askQuestion(this.textContent)"
+              class="text-xs bg-museum-secondary text-white px-3 py-1 rounded-full hover:bg-opacity-90 transition-colors"
+            >
+              Who is the artist of the Mona Lisa?
+            </button>
+            <button
+              onclick="askQuestion(this.textContent)"
+              class="text-xs bg-museum-secondary text-white px-3 py-1 rounded-full hover:bg-opacity-90 transition-colors"
+            >
+              When was this museum founded?
+            </button>
+            <button
+              onclick="askQuestion(this.textContent)"
+              class="text-xs bg-museum-secondary text-white px-3 py-1 rounded-full hover:bg-opacity-90 transition-colors"
+            >
+              What is Impressionism?
+            </button>
+            <button
+              onclick="askQuestion(this.textContent)"
+              class="text-xs bg-museum-secondary text-white px-3 py-1 rounded-full hover:bg-opacity-90 transition-colors"
+            >
+              Tell me about Egyptian artifacts
+            </button>
+            <button
+              onclick="askQuestion(this.textContent)"
+              class="text-xs bg-museum-secondary text-white px-3 py-1 rounded-full hover:bg-opacity-90 transition-colors"
+            >
+              What are the museum hours?
+            </button>
+            <button
+              onclick="askQuestion(this.textContent)"
+              class="text-xs bg-museum-secondary text-white px-3 py-1 rounded-full hover:bg-opacity-90 transition-colors"
+            >
+              How can I book a guided tour?
+            </button>
+          </div>
+        </div>
+
+        <!-- Chat Body -->
+        <div
+          id="chat-body"
+          class="flex-1 p-6 overflow-y-auto space-y-4 mb-28 museum-pattern scroll-smooth"
+        >
+          <!-- Welcome Message -->
+          <div class="flex flex-col fade-in">
+            <div
+              class="p-4 max-w-lg rounded-lg shadow-md bg-gradient-to-r from-museum-primary to-museum-secondary text-white self-start"
+            >
+              <p class="font-medium text-lg">
+                Welcome to the Virtual Museum Guide! 👋
+              </p>
+              <p class="mt-2">
+                I'm your specialized AI assistant focused exclusively on museums, art, and cultural heritage. I can help you explore collections, learn about artworks, discover art history, and navigate museum exhibitions worldwide.
+              </p>
+              <p class="mt-2">
+                Ask me anything about art, artists, historical periods, museum collections, exhibitions, or specific artifacts. Please note that I can only answer questions related to museums and art.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Chat Input Area -->
+        <div
+          class="fixed bottom-0 left-0 w-full bg-white dark:bg-gray-800 border-t dark:border-gray-700 px-4 py-3 z-50 md:ml-64 shadow-lg"
+        >
+          <div class="max-w-3xl mx-auto flex items-center gap-3">
+            <input
+              type="text"
+              id="input-box"
+              placeholder="Ask about museums, artworks, exhibitions, or art history..."
+              class="flex-1 px-4 py-2 rounded-full border border-museum-primary dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-museum-secondary dark:bg-gray-700 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
+            />
+            <button
+              onclick="startVoice()"
+              class="bg-museum-secondary hover:bg-opacity-90 text-white p-2 rounded-full transition duration-200 flex items-center justify-center"
+              title="Voice Input"
+            >
+              <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+                <path
+                  d="M12 14a3 3 0 0 0 3-3V5a3 3 0 1 0-6 0v6a3 3 0 0 0 3 3zm5-3a5 5 0 0 1-10 0H5a7 7 0 0 0 14 0h-2zm-5 9a1 1 0 0 0 1-1v-2h-2v2a1 1 0 0 0 1 1z"
+                />
+              </svg>
+            </button>
+            <button
+              id="send-btn"
+              class="bg-museum-primary hover:bg-opacity-90 text-white px-5 py-2 rounded-full transition duration-200 flex items-center"
+            >
+              <span>Send</span>
+              <svg
+                class="w-4 h-4 ml-1"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M14 5l7 7m0 0l-7 7m7-7H3"
+                ></path>
+              </svg>
+            </button>
+          </div>
+        </div>
+      </main>
+    </div>
+
+    <!-- Chat Logic -->
+    <script>
+      const API_URL =
+        "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent";
+      const API_KEY = "AIzaSyCiyWee7hmJZqULuan08YbojY4ZfuQfWgI"; // Replace with your actual API key
+
+      const inputBox = document.getElementById("input-box");
+      const sendBtn = document.getElementById("send-btn");
+      const chatBody = document.getElementById("chat-body");
+      const historyList = document.getElementById("history-list");
+      const clearHistoryBtn = document.getElementById("clear-history-btn");
+
+      // Chat history array
+      let chatHistory = JSON.parse(localStorage.getItem("chatHistory")) || [];
+
+      // Format message (bold and line breaks)
+      function formatMessage(message) {
+        return message
+          .replace(/\*\*\s*(.*?)\s*\*\*/g, "<b>$1</b>")
+          .replace(/(^|\s)\*\s*(\S.*?)(?=\s|$)/g, "$1<b>$2</b>")
+          .replace(/\n/g, "<br>")
+          .replace(/^- (.*?)$/gm, "<li>$1</li>")
+          .replace(
+            /<li>.*?<\/li>/gs,
+            (match) => `<ul class="list-disc pl-5 my-2">${match}</ul>`
+          );
+      }
+
+      // Add message to chat area
+      function addMessage(text, sender = "user") {
+        const messageDiv = document.createElement("div");
+        messageDiv.className = `p-3 max-w-lg rounded-lg shadow-md ${
+          sender === "user"
+            ? "bg-blue-100 dark:bg-blue-500 self-end"
+            : "bg-white dark:bg-teal-600 border-l-4 border-museum-secondary self-start"
+        } whitespace-pre-wrap fade-in`;
+        messageDiv.innerHTML = formatMessage(text);
+
+        const wrapper = document.createElement("div");
+        wrapper.className = "flex flex-col";
+        wrapper.appendChild(messageDiv);
+
+        chatBody.appendChild(wrapper);
+        chatBody.scrollTop = chatBody.scrollHeight;
+
+        // Add to history
+        const historyEntry = {
+          text,
+          sender,
+          timestamp: new Date().toISOString(),
+        };
+        chatHistory.push(historyEntry);
+        localStorage.setItem("chatHistory", JSON.stringify(chatHistory));
+        updateHistoryDisplay(historyEntry);
+      }
+
+      // Update history sidebar
+      function updateHistoryDisplay({ text, sender, timestamp }) {
+        const historyItem = document.createElement("div");
+        historyItem.className =
+          "p-2 bg-white dark:bg-gray-800 rounded cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700";
+        const time = new Date(timestamp).toLocaleTimeString();
+        historyItem.innerHTML = `
+        <div class="text-sm ${
+          sender === "user" ? "text-blue-600" : "text-museum-secondary"
+        }">${sender === "user" ? "You" : "Guide"}</div>
+        <div class="text-xs truncate">${text}</div>
+        <div class="text-xs text-gray-500">${time}</div>
+      `;
+        historyList.appendChild(historyItem);
+      }
+
+      // Clear history
+      function clearHistory() {
+        chatHistory = [];
+        localStorage.removeItem("chatHistory");
+        historyList.innerHTML = "";
+        chatBody.innerHTML = "";
+
+        // Add welcome message back
+        const welcomeHTML = `
+        <div class="flex flex-col fade-in">
+          <div class="p-4 max-w-lg rounded-lg shadow-md bg-gradient-to-r from-museum-primary to-museum-secondary text-white self-start">
+            <p class="font-medium text-lg">Welcome to the Virtual Museum Guide! 👋</p>
+            <p class="mt-2">I'm your specialized AI assistant focused exclusively on museums, art, and cultural heritage. I can help you explore collections, learn about artworks, discover art history, and navigate museum exhibitions worldwide.</p>
+            <p class="mt-2">Ask me anything about art, artists, historical periods, museum collections, exhibitions, or specific artifacts. Please note that I can only answer questions related to museums and art.</p>
+          </div>
+        </div>
+      `;
+        chatBody.innerHTML = welcomeHTML;
+      }
+
+      // Show "Thinking..." loader
+      let loadingDiv;
+      function showLoading() {
+        loadingDiv = document.createElement("div");
+        loadingDiv.className =
+          "p-3 max-w-lg rounded-lg shadow-md bg-gray-100 dark:bg-gray-600 self-start italic fade-in flex items-center";
+        loadingDiv.innerHTML = `
+        <div class="mr-2">
+          <svg class="animate-spin h-5 w-5 text-museum-secondary" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+          </svg>
+        </div>
+        Exploring museum knowledge...
+      `;
+
+        const wrapper = document.createElement("div");
+        wrapper.className = "flex flex-col loading-indicator";
+        wrapper.appendChild(loadingDiv);
+        chatBody.appendChild(wrapper);
+        chatBody.scrollTop = chatBody.scrollHeight;
+      }
+
+      function removeLoading() {
+        const loading = document.querySelector(".loading-indicator");
+        if (loading) loading.remove();
+      }
+
+      // Send message to Gemini
+      async function sendMessageToGemini(message) {
+        showLoading();
+
+        const contextPrompt = `You are a specialized virtual museum guide. You MUST ONLY answer questions related to museums, artwork, art history, exhibitions, artists, historical artifacts, museum collections, and cultural heritage.
+
+If the user asks about anything not related to museums or art (like personal questions, programming, mathematics, general knowledge, current events, cricket, football etc.), politely decline and explain you can only discuss museum-related topics.
+
+IMPORTANT: Be extremely flexible in interpreting what constitutes a museum question. If a question could possibly be related to museums, art, cultural heritage, historical artifacts, exhibitions, artists, art movements, museum architecture, or any museum-related topic in ANY way, always provide a detailed, helpful answer. Consider every possible interpretation of the question that might relate to museums before declining.
+
+For museum-related questions, ALWAYS provide comprehensive, informative answers regardless of:
+- How the question is phrased or formatted
+- Whether the question is specific or general
+- If the question is about any museum, artwork, or artist in the world
+- Whether the topic is about contemporary art or ancient artifacts
+- If it's about museum policies, ticketing, or logistics
+- Questions about digital exhibitions, virtual museums, or online collections
+- Queries about museum education, preservation techniques, or curation
+- Questions about specific art movements, styles, or historical periods in art
+- Inquiries about museum architecture, design, or physical spaces
+
+If there's any possibility the question relates to museums or art, even indirectly, provide an answer.
+
+Examples of topics you should answer:
+- Specific artworks or artists
+- Museum exhibitions and collections
+- Art movements and styles
+- Historical artifacts
+- Museum visiting information
+- Cultural heritage
+- Art techniques and mediums
+- Famous museums around the world
+- Art history and periods
+
+User question: ${message}`;
+
+        try {
+          const response = await fetch(`${API_URL}?key=${API_KEY}`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              contents: [{ parts: [{ text: contextPrompt }] }],
+              generationConfig: {
+                temperature: 0.7,
+                topP: 0.9,
+                maxOutputTokens: 1024
+              },
+              safetySettings: [
+                {
+                  category: "HARM_CATEGORY_HARASSMENT",
+                  threshold: "BLOCK_MEDIUM_AND_ABOVE"
+                },
+                {
+                  category: "HARM_CATEGORY_HATE_SPEECH",
+                  threshold: "BLOCK_MEDIUM_AND_ABOVE"
+                },
+                {
+                  category: "HARM_CATEGORY_SEXUALLY_EXPLICIT",
+                  threshold: "BLOCK_MEDIUM_AND_ABOVE"
+                },
+                {
+                  category: "HARM_CATEGORY_DANGEROUS_CONTENT",
+                  threshold: "BLOCK_MEDIUM_AND_ABOVE"
+                }
+              ]
+            }),
+          });
+
+          const data = await response.json();
+          removeLoading();
+
+          const reply =
+            data?.candidates?.[0]?.content?.parts?.[0]?.text ||
+            "I apologize, but I can only answer questions related to museums, art, and historical artifacts. I'm specially trained to assist with all types of museum information from anywhere in the world. Please try asking about any museum, artwork, artist, exhibition, or art history topic.";
+          addMessage(reply, "bot");
+        } catch (error) {
+          removeLoading();
+          addMessage(
+            "I apologize, but I am unable to connect to the museum database at the moment. Please try again later.",
+            "bot"
+          );
+          console.error(error);
+        }
+      }
+
+      // Unified send message logic
+      function sendMessage() {
+        const userInput = inputBox.value.trim();
+        if (!userInput) return;
+
+        addMessage(userInput, "user");
+        inputBox.value = "";
+        sendMessageToGemini(userInput);
+      }
+
+      // Load chat history on page load
+      function loadChatHistory() {
+        if (chatHistory.length > 0) {
+          // Clear default welcome message if history exists
+          chatBody.innerHTML = "";
+
+          chatHistory.forEach((entry) => {
+            addMessage(entry.text, entry.sender);
+            updateHistoryDisplay(entry);
+          });
+        }
+      }
+
+      // Send on button click
+      sendBtn.addEventListener("click", sendMessage);
+
+      // Send on Enter key
+      inputBox.addEventListener("keypress", (e) => {
+        if (e.key === "Enter") sendMessage();
+      });
+
+      // Start voice recognition and auto-send
+      function startVoice() {
+        const recognition = new (window.SpeechRecognition ||
+          window.webkitSpeechRecognition)();
+        recognition.lang = "en-US";
+        recognition.interimResults = false;
+        recognition.maxAlternatives = 1;
+
+        recognition.start();
+
+        inputBox.placeholder = "Listening...";
+
+        // Add visual indicator for voice recording
+        const sendButton = document.getElementById("send-btn");
+        sendButton.classList.add("bg-red-500");
+
+        recognition.onresult = (event) => {
+          const transcript = event.results[0][0].transcript;
+          inputBox.value = transcript;
+          inputBox.placeholder =
+            "Ask about museums, artworks, exhibitions, or art history...";
+          sendButton.classList.remove("bg-red-500");
+          sendMessage(); // Auto-send after voice input
+        };
+
+        recognition.onerror = () => {
+          inputBox.placeholder = "Voice input failed";
+          sendButton.classList.remove("bg-red-500");
+        };
+
+        recognition.onend = () => {
+          inputBox.placeholder =
+            "Ask about museums, artworks, exhibitions, or art history...";
+          sendButton.classList.remove("bg-red-500");
+        };
+      }
+
+      // Load history when page loads
+      window.addEventListener("load", loadChatHistory);
+
+      // Clear history button event
+      clearHistoryBtn.addEventListener("click", () => {
+        if (confirm("Are you sure you want to clear all chat history?")) {
+          clearHistory();
+        }
+      });
+
+      // Add function to handle suggested questions
+      function askQuestion(question) {
+        inputBox.value = question;
+        sendMessage();
+      }
+    </script>
+  </body>
+</html>
